@@ -70,7 +70,7 @@ public class CatWatchFace {
 
     private String generateTimeText() {
         mCalendar.setTimeInMillis(System.currentTimeMillis());
-        return String.format(TIME_FORMAT, mCalendar.get(Calendar.HOUR), mCalendar.get(Calendar.MINUTE));
+        return String.format(TIME_FORMAT, mCalendar.get(Calendar.HOUR_OF_DAY), mCalendar.get(Calendar.MINUTE));
     }
 
     private float computeCenterX(String timeText, Rect bounds) {
