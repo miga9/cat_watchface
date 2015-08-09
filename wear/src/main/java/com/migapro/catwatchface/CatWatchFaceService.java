@@ -44,7 +44,7 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
-            mWatchFace = CatWatchFace.newInstance(CatWatchFaceService.this);
+            mWatchFace = new CatWatchFace(CatWatchFaceService.this);
         }
 
         @Override

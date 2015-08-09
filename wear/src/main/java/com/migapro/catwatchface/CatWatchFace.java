@@ -21,25 +21,21 @@ public class CatWatchFace {
     private Bitmap mBackgroundBitmap;
     private Bitmap mBackgroundScaledBitmap;
 
-    public static CatWatchFace newInstance(Context context) {
-        Resources resources = context.getResources();
-
-        Bitmap backgroundBitmap = ((BitmapDrawable)resources.getDrawable(R.drawable.cat4, null)).getBitmap();
-
-        Paint timePaint = new Paint();
-        timePaint.setColor(Color.WHITE);
-        timePaint.setTextSize(resources.getDimension(R.dimen.paint_time_text));
-        timePaint.setAntiAlias(true);
-
-        Calendar calendar = Calendar.getInstance();
-
-        return new CatWatchFace(timePaint, backgroundBitmap, calendar);
+    public CatWatchFace(Context context) {
+        init(context);
     }
 
-    private CatWatchFace(Paint timePaint, Bitmap backgroundBitmap, Calendar calendar) {
-        mTimePaint = timePaint;
-        mBackgroundBitmap = backgroundBitmap;
-        mCalendar = calendar;
+    private void init(Context context) {
+        Resources resources = context.getResources();
+
+        mBackgroundBitmap = ((BitmapDrawable)resources.getDrawable(R.drawable.cat4, null)).getBitmap();
+
+        mTimePaint = new Paint();
+        mTimePaint.setColor(Color.WHITE);
+        mTimePaint.setTextSize(resources.getDimension(R.dimen.paint_time_text));
+        mTimePaint.setAntiAlias(true);
+
+        mCalendar = Calendar.getInstance();
     }
 
     public void draw(Canvas canvas, Rect bounds, boolean inAmbientMode) {
