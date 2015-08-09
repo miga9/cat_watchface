@@ -78,14 +78,4 @@ public class CatWatchFace {
         float timeLength = mTimePaint.measureText(timeText);
         return centerX - (timeLength / 2.0f);
     }
-
-    public void onAmbientModeChanged(boolean inAmbientMode) {
-        if (inAmbientMode) {
-            Bitmap.Config conf = Bitmap.Config.ARGB_8888;
-            mBackgroundBitmap =
-                    Bitmap.createBitmap(mBackgroundBitmap.getWidth(), mBackgroundBitmap.getHeight(), conf);
-        } else {
-
-        }
-    }
 }
