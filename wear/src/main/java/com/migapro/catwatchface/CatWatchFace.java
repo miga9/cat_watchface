@@ -42,7 +42,24 @@ public class CatWatchFace {
         mCalendar = calendar;
     }
 
-    public void draw(Canvas canvas, Rect bounds) {
+    public void draw(Canvas canvas, Rect bounds, boolean inAmbientMode) {
+        if (inAmbientMode) {
+            drawAmbientModeBackground(canvas, bounds);
+        } else {
+            drawRegularBackground(canvas, bounds);
+        }
+
+        String timeText = generateTimeText();
+        canvas.drawText(timeText, computeCenterX(timeText, bounds), 80, mTimePaint);
+    }
+
+    private void drawAmbientModeBackground(Canvas canvas, Rect bounds) {
+        Paint blackBackgroundPaint = new Paint();
+        blackBackgroundPaint.setColor(Color.BLACK);
+        canvas.drawRect(bounds, blackBackgroundPaint);
+    }
+
+    private void drawRegularBackground(Canvas canvas, Rect bounds) {
         int width = bounds.width();
         int height = bounds.height();
 
@@ -53,9 +70,6 @@ public class CatWatchFace {
                     Bitmap.createScaledBitmap(mBackgroundBitmap, width, height, true);
         }
         canvas.drawBitmap(mBackgroundScaledBitmap, 0, 0, null);
-
-        String timeText = generateTimeText();
-        canvas.drawText(timeText, computeCenterX(timeText, bounds), 80, mTimePaint);
     }
 
     private String generateTimeText() {
@@ -67,5 +81,15 @@ public class CatWatchFace {
         float centerX = bounds.exactCenterX();
         float timeLength = mTimePaint.measureText(timeText);
         return centerX - (timeLength / 2.0f);
+    }
+
+    public void onAmbientModeChanged(boolean inAmbientMode) {
+        if (inAmbientMode) {
+            Bitmap.Config conf = Bitmap.Config.ARGB_8888;
+            mBackgroundBitmap =
+                    Bitmap.createBitmap(mBackgroundBitmap.getWidth(), mBackgroundBitmap.getHeight(), conf);
+        } else {
+
+        }
     }
 }

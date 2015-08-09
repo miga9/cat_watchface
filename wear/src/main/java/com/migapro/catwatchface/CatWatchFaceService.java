@@ -61,13 +61,14 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
         @Override
         public void onAmbientModeChanged(boolean inAmbientMode) {
             super.onAmbientModeChanged(inAmbientMode);
+            invalidate();
             updateTimer();
         }
 
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
             super.onDraw(canvas, bounds);
-            mWatchFace.draw(canvas, bounds);
+            mWatchFace.draw(canvas, bounds, isInAmbientMode());
         }
 
         @Override
