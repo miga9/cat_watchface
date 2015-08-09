@@ -13,6 +13,8 @@ import java.util.Calendar;
 
 public class CatWatchFace {
 
+    private static final String TIME_FORMAT = "%02d:%02d";
+
     private Calendar mCalendar;
 
     private Paint mTimePaint;
@@ -58,7 +60,7 @@ public class CatWatchFace {
 
     private String generateTimeText() {
         mCalendar.setTimeInMillis(System.currentTimeMillis());
-        return mCalendar.get(Calendar.HOUR) + ":" + mCalendar.get(Calendar.MINUTE);
+        return String.format(TIME_FORMAT, mCalendar.get(Calendar.HOUR), mCalendar.get(Calendar.MINUTE));
     }
 
     private float computeCenterX(String timeText, Rect bounds) {
