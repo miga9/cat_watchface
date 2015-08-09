@@ -78,4 +78,11 @@ public class CatWatchFace {
         float timeLength = mTimePaint.measureText(timeText);
         return centerX - (timeLength / 2.0f);
     }
+
+    public void onAmbientModeChanged(boolean isLowBitAmbient, boolean inAmbientMode) {
+        if (isLowBitAmbient) {
+            boolean antiAlias = !inAmbientMode;
+            mTimePaint.setAntiAlias(antiAlias);
+        }
+    }
 }

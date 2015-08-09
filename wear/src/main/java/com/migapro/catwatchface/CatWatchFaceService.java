@@ -24,6 +24,7 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
         private static final int MSG_UPDATE_TIME = 0;
 
         private CatWatchFace mWatchFace;
+        private boolean mLowBitAmbient;
         private final Handler mTimeTickHandler = new Handler() {
             @Override
             public void handleMessage(Message message) {
@@ -50,6 +51,7 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
         @Override
         public void onPropertiesChanged(Bundle properties) {
             super.onPropertiesChanged(properties);
+            mLowBitAmbient = properties.getBoolean(PROPERTY_LOW_BIT_AMBIENT, false);
         }
 
         @Override
@@ -61,6 +63,7 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
         @Override
         public void onAmbientModeChanged(boolean inAmbientMode) {
             super.onAmbientModeChanged(inAmbientMode);
+            mWatchFace.onAmbientModeChanged(mLowBitAmbient, inAmbientMode);
             invalidate();
             updateTimer();
         }
