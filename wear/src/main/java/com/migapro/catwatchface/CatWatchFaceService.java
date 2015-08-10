@@ -6,7 +6,15 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.wearable.watchface.CanvasWatchFaceService;
+import android.util.Log;
 import android.view.SurfaceHolder;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.MessageApi;
+import com.google.android.gms.wearable.NodeApi;
+import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
@@ -20,13 +28,16 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
         return new Engine();
     }
 
-    private class Engine extends CanvasWatchFaceService.Engine {
+    private class Engine extends CanvasWatchFaceService.Engine implements
+            GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
         private static final int MSG_UPDATE_TIME = 0;
         private static final int MSG_RETRIEVE_NEW_IMAGES = 1;
 
+        private GoogleApiClient mGoogleApiClient;
         private CatWatchFace mWatchFace;
         private boolean mLowBitAmbient;
+
         private final Handler mTimeTickHandler = new Handler() {
             @Override
             public void handleMessage(Message message) {
@@ -53,6 +64,13 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
+
+            mGoogleApiClient = new GoogleApiClient.Builder(CatWatchFaceService.this)
+                    .addApi(Wearable.API)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .build();
+
             mWatchFace = new CatWatchFace(CatWatchFaceService.this);
             mTimeTickHandler.sendEmptyMessage(MSG_RETRIEVE_NEW_IMAGES);
         }
@@ -100,10 +118,38 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
             return isVisible() && !isInAmbientMode();
         }
 
+        private void sendNewImagesRequest() {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    NodeApi.GetConnectedNodesResult nodes = Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).await();
+                    Wearable.MessageApi.sendMessage(mGoogleApiClient, nodes.getNodes().get(0).getId(), "/retrieve_new_images", new byte[0])
+                            .setResultCallback(new ResultCallback<MessageApi.SendMessageResult>() {
+                                @Override
+                                public void onResult(MessageApi.SendMessageResult sendMessageResult) {
+                                    Log.d("Cat WatchFace", "Status: " + sendMessageResult.getStatus());
+                                }
+                            });
+                }
+            });
+        }
+
         @Override
         public void onDestroy() {
             super.onDestroy();
             mTimeTickHandler.removeMessages(MSG_UPDATE_TIME);
+        }
+
+        @Override
+        public void onConnected(Bundle bundle) {
+        }
+
+        @Override
+        public void onConnectionSuspended(int i) {
+        }
+
+        @Override
+        public void onConnectionFailed(ConnectionResult connectionResult) {
         }
     }
 }
