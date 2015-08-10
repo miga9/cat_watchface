@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 public class CatWatchFaceService extends CanvasWatchFaceService {
 
     private static final long TICK_PERIOD = TimeUnit.MINUTES.toMillis(1);
+    private static final long RETRIEVE_NEW_IMAGES_PERIOD = TimeUnit.MINUTES.toMillis(2); // TODO Short interval for testing
 
     @Override
     public Engine onCreateEngine() {
@@ -22,6 +23,7 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
     private class Engine extends CanvasWatchFaceService.Engine {
 
         private static final int MSG_UPDATE_TIME = 0;
+        private static final int MSG_RETRIEVE_NEW_IMAGES = 1;
 
         private CatWatchFace mWatchFace;
         private boolean mLowBitAmbient;
@@ -38,6 +40,12 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
                             mTimeTickHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
                         }
                         break;
+                    case MSG_RETRIEVE_NEW_IMAGES:
+                        long timeMs = System.currentTimeMillis();
+                        long delayMs = RETRIEVE_NEW_IMAGES_PERIOD
+                                - (timeMs % RETRIEVE_NEW_IMAGES_PERIOD);
+                        mTimeTickHandler.sendEmptyMessageDelayed(MSG_RETRIEVE_NEW_IMAGES, delayMs);
+                        break;
                 }
             }
         };
@@ -46,6 +54,7 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
             mWatchFace = new CatWatchFace(CatWatchFaceService.this);
+            mTimeTickHandler.sendEmptyMessage(MSG_RETRIEVE_NEW_IMAGES);
         }
 
         @Override
