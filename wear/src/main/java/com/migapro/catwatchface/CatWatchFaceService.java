@@ -45,17 +45,12 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
                     case MSG_UPDATE_TIME:
                         invalidate();
                         if (shouldTimerBeRunning()) {
-                            long timeMs = System.currentTimeMillis();
-                            long delayMs = TICK_PERIOD
-                                    - (timeMs % TICK_PERIOD);
-                            mTimeTickHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
+                            sendDelayedMessage(MSG_UPDATE_TIME, TICK_PERIOD);
                         }
                         break;
                     case MSG_RETRIEVE_NEW_IMAGES:
-                        long timeMs = System.currentTimeMillis();
-                        long delayMs = RETRIEVE_NEW_IMAGES_PERIOD
-                                - (timeMs % RETRIEVE_NEW_IMAGES_PERIOD);
-                        mTimeTickHandler.sendEmptyMessageDelayed(MSG_RETRIEVE_NEW_IMAGES, delayMs);
+                        sendNewImagesRequest();
+                        sendDelayedMessage(MSG_RETRIEVE_NEW_IMAGES, RETRIEVE_NEW_IMAGES_PERIOD);
                         break;
                 }
             }
@@ -72,7 +67,13 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
                     .build();
 
             mWatchFace = new CatWatchFace(CatWatchFaceService.this);
-            mTimeTickHandler.sendEmptyMessage(MSG_RETRIEVE_NEW_IMAGES);
+            sendDelayedMessage(MSG_RETRIEVE_NEW_IMAGES, RETRIEVE_NEW_IMAGES_PERIOD);
+        }
+
+        private void sendDelayedMessage(int msg, long interval) {
+            long timeMs = System.currentTimeMillis();
+            long delayMs = interval - (timeMs % interval);
+            mTimeTickHandler.sendEmptyMessageDelayed(msg, delayMs);
         }
 
         @Override
