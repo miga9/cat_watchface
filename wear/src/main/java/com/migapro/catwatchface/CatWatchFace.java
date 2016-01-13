@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
+import android.util.Log;
 
 import java.util.Calendar;
 
@@ -21,14 +22,15 @@ public class CatWatchFace {
     private Bitmap mBackgroundBitmap;
     private Bitmap mBackgroundScaledBitmap;
 
+    private boolean mRefreshScaledBitmap;
+
     public CatWatchFace(Context context) {
         init(context);
     }
 
     private void init(Context context) {
         Resources resources = context.getResources();
-
-        mBackgroundBitmap = ((BitmapDrawable)resources.getDrawable(R.drawable.cat4, null)).getBitmap();
+        mBackgroundBitmap = ((BitmapDrawable)resources.getDrawable(R.drawable.cat4, null)).getBitmap(); // TODO default for debug
 
         mTimePaint = new Paint();
         mTimePaint.setColor(Color.WHITE);
@@ -36,6 +38,12 @@ public class CatWatchFace {
         mTimePaint.setAntiAlias(true);
 
         mCalendar = Calendar.getInstance();
+    }
+
+    public void setBitmap(Bitmap bitmap) {
+        Log.d("CAT", "setbitmap");
+        mBackgroundBitmap = bitmap;
+        mRefreshScaledBitmap = true;
     }
 
     public void draw(Canvas canvas, Rect bounds, boolean inAmbientMode) {
@@ -59,11 +67,12 @@ public class CatWatchFace {
         int width = bounds.width();
         int height = bounds.height();
 
-        if (mBackgroundScaledBitmap == null
+        if (mRefreshScaledBitmap || mBackgroundScaledBitmap == null
                 || mBackgroundScaledBitmap.getWidth() != width
                 || mBackgroundScaledBitmap.getHeight() != height) {
             mBackgroundScaledBitmap =
                     Bitmap.createScaledBitmap(mBackgroundBitmap, width, height, true);
+            mRefreshScaledBitmap = false;
         }
         canvas.drawBitmap(mBackgroundScaledBitmap, 0, 0, null);
     }

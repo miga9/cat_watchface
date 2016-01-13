@@ -1,5 +1,7 @@
 package com.migapro.catwatchface;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.os.Bundle;
@@ -11,17 +13,21 @@ import android.view.SurfaceHolder;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.wearable.MessageApi;
-import com.google.android.gms.wearable.NodeApi;
+import com.google.android.gms.wearable.Asset;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataEvent;
+import com.google.android.gms.wearable.DataEventBuffer;
+import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.Wearable;
+import com.migapro.catwatchface.util.Constants;
 
+import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
 public class CatWatchFaceService extends CanvasWatchFaceService {
 
+    private static final String TAG = "Cat Wear";
     private static final long TICK_PERIOD = TimeUnit.MINUTES.toMillis(1);
-    private static final long RETRIEVE_NEW_IMAGES_PERIOD = TimeUnit.MINUTES.toMillis(2); // TODO Short interval for testing
 
     @Override
     public Engine onCreateEngine() {
@@ -32,7 +38,6 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
             GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
         private static final int MSG_UPDATE_TIME = 0;
-        private static final int MSG_RETRIEVE_NEW_IMAGES = 1;
 
         private GoogleApiClient mGoogleApiClient;
         private CatWatchFace mWatchFace;
@@ -43,15 +48,31 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
             public void handleMessage(Message message) {
                 switch (message.what) {
                     case MSG_UPDATE_TIME:
+                        Log.d(TAG, "time update");
+
                         invalidate();
                         if (shouldTimerBeRunning()) {
                             sendDelayedMessage(MSG_UPDATE_TIME, TICK_PERIOD);
                         }
                         break;
-                    case MSG_RETRIEVE_NEW_IMAGES:
-                        sendNewImagesRequest();
-                        sendDelayedMessage(MSG_RETRIEVE_NEW_IMAGES, RETRIEVE_NEW_IMAGES_PERIOD);
-                        break;
+                }
+            }
+        };
+
+        public DataApi.DataListener onDataChangedListener = new DataApi.DataListener() {
+            @Override
+            public void onDataChanged(DataEventBuffer dataEvents) {
+                Log.d(TAG, "Data changed: " + dataEvents);
+                for (DataEvent event : dataEvents) {
+                    Log.d(TAG, "Data received: " + event.getDataItem().getUri());
+
+                    if (event.getType() == DataEvent.TYPE_CHANGED &&
+                            event.getDataItem().getUri().getPath().equals(Constants.KEY_DATAMAP_PATH)) {
+                        DataMapItem dataMapItem = DataMapItem.fromDataItem(event.getDataItem());
+                        Asset profileAsset = dataMapItem.getDataMap().getAsset(Constants.KEY_ASSET);
+                        Bitmap bitmap = loadBitmapFromAsset(profileAsset);
+                        mWatchFace.setBitmap(bitmap);
+                    }
                 }
             }
         };
@@ -66,8 +87,9 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
                     .addOnConnectionFailedListener(this)
                     .build();
 
+            mGoogleApiClient.connect();
+
             mWatchFace = new CatWatchFace(CatWatchFaceService.this);
-            sendDelayedMessage(MSG_RETRIEVE_NEW_IMAGES, RETRIEVE_NEW_IMAGES_PERIOD);
         }
 
         private void sendDelayedMessage(int msg, long interval) {
@@ -119,30 +141,17 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
             return isVisible() && !isInAmbientMode();
         }
 
-        private void sendNewImagesRequest() {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    NodeApi.GetConnectedNodesResult nodes = Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).await();
-                    Wearable.MessageApi.sendMessage(mGoogleApiClient, nodes.getNodes().get(0).getId(), "/retrieve_new_images", new byte[0])
-                            .setResultCallback(new ResultCallback<MessageApi.SendMessageResult>() {
-                                @Override
-                                public void onResult(MessageApi.SendMessageResult sendMessageResult) {
-                                    Log.d("Cat WatchFace", "Status: " + sendMessageResult.getStatus());
-                                }
-                            });
-                }
-            });
-        }
-
         @Override
         public void onDestroy() {
             super.onDestroy();
             mTimeTickHandler.removeMessages(MSG_UPDATE_TIME);
+            mGoogleApiClient.disconnect();
         }
 
         @Override
         public void onConnected(Bundle bundle) {
+            Wearable.DataApi.addListener(mGoogleApiClient, onDataChangedListener);
+            Log.d(TAG, "onConnected");
         }
 
         @Override
@@ -151,6 +160,21 @@ public class CatWatchFaceService extends CanvasWatchFaceService {
 
         @Override
         public void onConnectionFailed(ConnectionResult connectionResult) {
+        }
+
+        private Bitmap loadBitmapFromAsset(Asset asset) {
+            if (asset == null) {
+                throw new IllegalArgumentException("Asset must be non-null");
+            }
+
+            InputStream assetInputStream = Wearable.DataApi.getFdForAsset(mGoogleApiClient, asset).await().getInputStream();
+
+            if (assetInputStream == null) {
+                Log.w(TAG, "Requested an unknown Asset.");
+                return null;
+            }
+
+            return BitmapFactory.decodeStream(assetInputStream);
         }
     }
 }
